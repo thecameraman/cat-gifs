@@ -1,0 +1,33 @@
+name: Auto Update Cat GIFs
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # runs every day at midnight UTC
+  workflow_dispatch:      # allow manual run
+
+jobs:
+  update-gifs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run GIF scraper
+        run: node generate-gifs.js
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "GifBot"
+          git config user.email "gifbot@users.noreply.github.com"
+          git add gifs.json
+          git diff-index --quiet HEAD || git commit -m "Auto-update GIFs"
+          git push
