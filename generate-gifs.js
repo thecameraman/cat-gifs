@@ -5,7 +5,6 @@
 
 import Parser from "rss-parser";
 import fs from "fs";
-import fetch from "node-fetch";
 
 const parser = new Parser();
 
@@ -18,12 +17,12 @@ const subreddits = [
   "CatPictures",
 ];
 
-// Checks if GIF URL is valid (200 OK)
+// Check if GIF URL loads successfully
 async function urlWorks(url) {
   try {
     const res = await fetch(url, { method: "HEAD" });
     return res.ok;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -39,9 +38,7 @@ async function scrapeRedditForGifs() {
         const regex = /https:\/\/i\.redd\.it\/[A-Za-z0-9]+\.gif/;
         const match = item.content?.match(regex) || item.link?.match(regex);
 
-        if (match) {
-          collected.push(match[0]);
-        }
+        if (match) collected.push(match[0]);
       });
 
     } catch (err) {
@@ -49,18 +46,14 @@ async function scrapeRedditForGifs() {
     }
   }
 
-  // Deduplicate
   collected = [...new Set(collected)];
-
   console.log(`Found ${collected.length} GIF candidates. Checking availability...`);
 
-  // Validate URLs
   const working = [];
   for (const url of collected) {
-    const ok = await urlWorks(url);
-    if (ok) {
-      working.push(url);
+    if (await urlWorks(url)) {
       console.log("✔ OK:", url);
+      working.push(url);
     } else {
       console.log("✖ Bad:", url);
     }
@@ -73,7 +66,6 @@ async function scrapeRedditForGifs() {
   };
 
   fs.writeFileSync("gifs.json", JSON.stringify(output, null, 2));
-
   console.log("Saved", working.length, "working GIFs.");
 }
 
